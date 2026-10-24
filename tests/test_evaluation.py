@@ -40,3 +40,30 @@ def test_ground_truth_evaluation():
     assert metrics["recall"] == 1.0
     assert metrics["f1"] == 1.0
     assert metrics["average_iou"] > 0.80
+
+
+def test_ground_truth_image_filtering():
+    preds = [
+        {"image": "img1.jpg", "label": "car", "confidence": 0.95, "bbox": [100, 100, 200, 200]},
+        {"image": "img2.jpg", "label": "car", "confidence": 0.90, "bbox": [100, 100, 200, 200]},
+    ]
+    gt = [
+        {"image": "img1.jpg", "label": "car", "bbox": [100, 100, 200, 200]},
+    ]
+    metrics = evaluate_detections_against_ground_truth(preds, gt, iou_thresholds=[0.5])
+    assert metrics["precision"] == 0.5  # 1 TP on img1, 1 FP on img2
+    assert metrics["recall"] == 1.0
+    assert metrics["f1"] == round(2 * 0.5 * 1.0 / 1.5, 4)
+
+
+def test_ground_truth_case_insensitivity():
+    preds = [
+        {"label": "Car", "confidence": 0.95, "bbox": [100, 100, 200, 200]},
+    ]
+    gt = [
+        {"label": "car ", "bbox": [100, 100, 200, 200]},
+    ]
+    metrics = evaluate_detections_against_ground_truth(preds, gt, iou_thresholds=[0.5])
+    assert metrics["precision"] == 1.0
+    assert metrics["recall"] == 1.0
+    assert metrics["average_iou"] == 1.0

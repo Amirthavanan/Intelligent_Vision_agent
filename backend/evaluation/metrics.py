@@ -87,13 +87,18 @@ def evaluate_detections_against_ground_truth(
         matched_gt = set()
         tp = 0
         fp = 0
+        ious_at_thresh: List[float] = []
 
         for pred in sorted_preds:
             best_iou = 0.0
             best_gt_idx = -1
 
             for gt_idx, gt in enumerate(ground_truths):
-                if gt_idx in matched_gt or pred["label"] != gt["label"]:
+                if gt_idx in matched_gt:
+                    continue
+                if pred.get("image") and gt.get("image") and pred["image"] != gt["image"]:
+                    continue
+                if pred["label"].strip().lower() != gt["label"].strip().lower():
                     continue
                 iou = calculate_iou(pred["bbox"], gt["bbox"])
                 if iou > best_iou:
@@ -103,9 +108,12 @@ def evaluate_detections_against_ground_truth(
             if best_iou >= iou_thresh:
                 tp += 1
                 matched_gt.add(best_gt_idx)
-                all_ious.append(best_iou)
+                ious_at_thresh.append(best_iou)
             else:
                 fp += 1
+
+        if iou_thresh == iou_thresholds[0]:
+            all_ious = ious_at_thresh
 
         fn = len(ground_truths) - len(matched_gt)
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
