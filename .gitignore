@@ -48,3 +48,7 @@ data/*.db
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Node
+node_modules/
+package-lock.json
